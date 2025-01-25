@@ -2,7 +2,7 @@
   "name": "nestjstcpc",
   "displayName": "nestjstcpc",
   "description": "",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "publisher": "MykolaRositskyi",
   "repository": {
     "url": "https://github.com/mykolarositskyi/vsc-nestjs-tcpc"
