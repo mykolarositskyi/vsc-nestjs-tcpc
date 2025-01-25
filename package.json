@@ -4,6 +4,9 @@
   "description": "",
   "version": "0.0.1",
   "publisher": "MykolaRositskyi",
+  "repository": {
+    "url": "https://github.com/mykolarositskyi/vsc-nestjs-tcpc"
+  },
   "engines": {
     "vscode": "^1.96.0"
   },
