@@ -2,7 +2,7 @@
   "name": "nestjstcpc",
   "displayName": "TCP NestJS Client",
   "description": "",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "MykolaRositskyi",
   "repository": {
     "url": "https://github.com/mykolarositskyi/vsc-nestjs-tcpc"
