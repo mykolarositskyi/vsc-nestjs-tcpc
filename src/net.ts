@@ -1,50 +1,62 @@
-import { Socket } from "net";
-import * as vscode from "vscode";
-import { generateRandomString } from "./helpers";
+import { Socket } from 'net'
+import * as vscode from 'vscode'
+import { generateRandomString } from './helpers'
 
-export const sendMessageToTcpServer = (
-  host: string,
-  port: number,
-  data: any
-): Promise<any> => {
+function serializeMessage(message: Record<string, unknown>): string {
+  const stringifyJson = JSON.stringify(message)
+  return `${stringifyJson.length}#${stringifyJson}`
+}
+
+function deserializeMessage(message: string): Record<string, unknown> {
+  return JSON.parse(message.split('#')[1])
+}
+
+export const sendMessageToTcpServer = (host: string, port: number, data: any): Promise<any> => {
   return new Promise((resolve, reject) => {
-    const client = new Socket();
+    const client = new Socket()
 
     client.connect(port, host, () => {
-      console.log(`Connected to TCP server at ${host}:${port}`);
+      console.log(`Connected to TCP server at ${host}:${port}`)
 
-      vscode.window.showInformationMessage(`Connected!`);
+      vscode.window.showInformationMessage(`Sending message`)
 
-      const payload = JSON.stringify({
-        pattern: data.message,
-        data: { data: data.payload },
-        id: generateRandomString(),
-      });
+      client.write(
+        serializeMessage({
+          // TODO: Serialize pattern to support string, object
+          pattern: data.message,
+          data: data.payload,
+          id: generateRandomString(),
+        }),
+        'utf-8',
+        (err) => {
+          if (err) {
+            vscode.window.showErrorMessage(`Sending message error occurred: ${JSON.stringify(err)}`)
+          }
+        },
+      )
+    })
 
-      client.write(payload.length + "#" + payload, "utf-8", (err) => {
-        console.error(err);
-      });
-    });
+    let responseBuffer = ''
 
-    let responseBuffer = "";
-
-    client.on("data", (data) => {
-      responseBuffer += data.toString();
+    client.on('data', (data) => {
+      responseBuffer += data.toString()
 
       try {
-        const parsedResponse = JSON.parse(responseBuffer.split("#")[1]);
-        resolve(parsedResponse);
+        const parsedResponse = deserializeMessage(responseBuffer)
+        resolve(parsedResponse)
 
-        client.destroy();
-      } catch (error) {}
-    });
+        client.destroy()
+      } catch (error) {
+        vscode.window.showErrorMessage(`Client error occurred: ${JSON.stringify(error)}`)
+      }
+    })
 
-    client.on("error", (err) => {
-      reject(`TCP client error: ${err.message}`);
-    });
+    client.on('error', (err) => {
+      reject(`TCP client error: ${err.message}`)
+    })
 
-    client.on("close", () => {
-      console.log("Connection closed");
-    });
-  });
-};
+    client.on('close', () => {
+      console.log('Connection closed')
+    })
+  })
+}

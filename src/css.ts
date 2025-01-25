@@ -24,6 +24,7 @@ export const buttonCss = `
       touch-action: manipulation;
       vertical-align: baseline;
       white-space: nowrap;
+      width: 100%;
     }
 
     .button-7:hover,
@@ -40,7 +41,7 @@ export const buttonCss = `
       box-shadow: none;
     }
   </style>
-`;
+`
 
 export const inputCSS = `
   <style>
@@ -51,16 +52,18 @@ export const inputCSS = `
     .input-wrapper {
       display: flex;
       flex-direction: column;
+      gap: 6px;
     }
 
     .input {
-      border: 1px solid black;
+      border: 1px solid #333;
       border-radius: 2px;
       padding: 8px 16px;
-      margin-top: 2px;
+      background: transparent;
+      color: white;
     }
   </style>
-`;
+`
 
 export const responseCSS = `
   <style>
@@ -74,4 +77,4 @@ export const responseCSS = `
       color: #000;
     }
   </style>
-`;
+`

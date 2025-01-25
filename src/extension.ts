@@ -1,71 +1,62 @@
-import * as vscode from "vscode";
-import { sendMessageToTcpServer } from "./net";
-import { buttonCss, inputCSS, responseCSS } from "./css";
+import * as vscode from 'vscode'
+import { sendMessageToTcpServer } from './net'
+import { buttonCss, inputCSS, responseCSS } from './css'
 
 export function activate(context: vscode.ExtensionContext) {
-  const disposable = vscode.commands.registerCommand(
-    "nestjstcpc.sendNestJSTCPMessage",
-    async () => {
-      const portNumber = await vscode.window.showInputBox({
-        placeHolder: "Enter the TCP server port number",
-        validateInput: (value: string) => {
-          const port = Number(value);
-          return isNaN(port) || port < 1 || port > 65535
-            ? "Please enter a valid port number (1-65535)"
-            : null;
-        },
-      });
+  const disposable = vscode.commands.registerCommand('nestjstcpc.sendNestJSTCPMessage', async () => {
+    const defaultPortNumber = 3001
+    const defaultHostname = 'localhost'
 
-      if (!portNumber) {
-        vscode.window.showErrorMessage("Port number is required.");
-        return;
-      }
+    const hostname = await vscode.window.showInputBox({
+      placeHolder: `Enter the TCP server hostname. Default: ${defaultHostname}`,
+    })
 
-      const panel = vscode.window.createWebviewPanel(
-        "sendTcpMessageUI",
-        "Send TCP Message",
-        vscode.ViewColumn.Beside,
-        { enableScripts: true }
-      );
+    const portNumber = await vscode.window.showInputBox({
+      placeHolder: `Enter the TCP server port number. Default: ${defaultPortNumber}`,
+      validateInput: (value: string) => {
+        const port = value ? Number(value) : defaultPortNumber
+        return isNaN(port) || port < 1 || port > 65535 ? 'Please enter a valid port number (1-65535)' : null
+      },
+    })
 
-      panel.webview.html = getWebviewContent(portNumber);
+    const panel = vscode.window.createWebviewPanel('sendTcpMessageUI', 'Send TCP Message', vscode.ViewColumn.Beside, {
+      enableScripts: true,
+    })
 
-      panel.webview.onDidReceiveMessage(
-        async (message: {
-          command: string;
-          message: string;
-          jsonData: Record<string, any>;
-        }) => {
-          if (message.command === "sendData") {
-            try {
-              const host = "localhost";
-              const port = parseInt(portNumber, 10);
-              const response = await sendMessageToTcpServer(host, port, {
-                message: message.message,
-                payload: message.jsonData,
-              });
-              panel.webview.postMessage({
-                command: "showResponse",
-                response: response.response,
-              });
-            } catch (error) {
-              panel.webview.postMessage({
-                command: "showResponse",
-                response: "Error sending data.",
-              });
-            }
+    const host = hostname || defaultHostname
+    const port = portNumber ? parseInt(portNumber, 10) : defaultPortNumber
+
+    panel.webview.html = getWebviewContent(host, port)
+
+    panel.webview.onDidReceiveMessage(
+      async (message: { command: string; message: string; jsonData: Record<string, any> }) => {
+        if (message.command === 'sendData') {
+          try {
+            const response = await sendMessageToTcpServer(host, port, {
+              message: message.message,
+              payload: message.jsonData,
+            })
+            panel.webview.postMessage({
+              command: 'showResponse',
+              response: response.response,
+            })
+          } catch (error) {
+            panel.webview.postMessage({
+              command: 'showResponse',
+              response: 'Error sending data.',
+            })
           }
-        },
-        undefined,
-        context.subscriptions
-      );
-    }
-  );
+        }
+      },
+      undefined,
+      context.subscriptions,
+    )
+  })
 
-  context.subscriptions.push(disposable);
+  context.subscriptions.push(disposable)
 }
 
-function getWebviewContent(serverPort: string): string {
+function getWebviewContent(serverHost: string, serverPort: number): string {
   return `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -75,11 +66,11 @@ function getWebviewContent(serverPort: string): string {
   </head>
 
   <body>
-    <h1>Connected to server port ${serverPort}</h1>
+    <h1>Connected to server ${serverHost}:${serverPort}</h1>
 
     <form id="jsonForm">
       <div class="input-wrapper">
-        <label for="message" class="input-label">Name</label>
+        <label for="message" class="input-label">Message pattern</label>
         <input
           type="input"
           class="input"
@@ -100,7 +91,7 @@ function getWebviewContent(serverPort: string): string {
           id="jsonData"
           rows="5"
           cols="30"
-        ></textarea>
+        >{}</textarea>
       </div>
 
       <br /><br />
@@ -111,7 +102,7 @@ function getWebviewContent(serverPort: string): string {
     </form>
 
     <h3>Output</h3>
-    <pre class="response" id="response"></pre>
+    <pre class="response" id="response">No response yet</pre>
 
     <script>
       const vscode = acquireVsCodeApi();
@@ -147,13 +138,18 @@ function getWebviewContent(serverPort: string): string {
       });
     </script>
 
+    <style>
+      * {
+        font-family: Helvetica Neue;
+      }
+    </style>
+
     ${buttonCss}
     ${inputCSS}
     ${responseCSS}
   </body>
 </html>
-`;
+`
 }
-
 
 export function deactivate() {}
